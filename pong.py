@@ -1,5 +1,7 @@
-from turtle import right
+from turtle import bgcolor, right
 import pygame, random, sys
+import math
+import sympy
 
 # To add sound use pygame mixer
 
@@ -22,8 +24,8 @@ ligth_grey = (250, 250, 250)
 # ScoreboardColor
 scoreColor = (250, 250, 250)
 
-ballSpeedX = 4
-ballSpeedY = 4
+# change this to change the speed of the ball
+ballSpeed = 6
 basic_font = pygame.font.Font('freesansbold.ttf', 32)
 
 class Player():
@@ -53,12 +55,12 @@ class Player():
         self.collidesWithBorder()
 
 class Ball():
-    def __init__(self, speed_x, speed_y):
-        self.speed_x = speed_x
-        self.speed_y = speed_y
+    def __init__(self, speed):
+        self.speed_x = math.sqrt((speed**2)/2)
+        self.speed_y = math.sqrt((speed**2)/2)
         self.directionX = random.choice((-1, 1))
         self.directionY = random.choice((-1, 1))
-        self.ball = pygame.Rect(scaledWidth/2 - 15, scaledHeight/2 - 15, 30, 30)
+        self.ball = pygame.Rect(scaledWidth/2 - 15, scaledHeight/2 - 15, 20, 20)
 
     def update(self):
         self.draw()
@@ -73,6 +75,8 @@ class Ball():
     def reset(self):
         self.directionX = random.choice((-1, 1))
         self.directionY = random.choice((-1, 1))
+        self.speed_x = math.sqrt((ballSpeed**2)/2)
+        self.speed_y = math.sqrt((ballSpeed**2)/2)
         self.ball.center = (scaledWidth/2, scaledHeight/2)
 
     def draw(self):
@@ -91,23 +95,40 @@ class Game():
         self.scoring()
         self.displayScore()
 
+    # if player and ball collide, reverse xdirection
     def collision(self):
         if self.player1.paddel.colliderect(self.ball.ball):
             self.ball.directionX = 1
+            theta = abs(self.player1.paddel.centery - self.ball.ball.centery) / 70 * 2
+            speed = math.sqrt(((1+theta**2)/ballSpeed**2)**-1)
+            self.ball.speed_x = speed
+            self.ball.speed_y = speed * theta
+            if self.player1.paddel.centery - self.ball.ball.centery > 0:
+                self.ball.directionY = -1
+            else:
+                self.ball.directionY = 1
         if self.player2.paddel.colliderect(self.ball.ball):
             self.ball.directionX = -1
-        
+            theta = abs(self.player2.paddel.centery - self.ball.ball.centery) / 70 * 2
+            speed = math.sqrt(((1+theta**2)/ballSpeed**2)**-1)
+            self.ball.speed_x = speed
+            self.ball.speed_y = speed * theta
+            if self.player2.paddel.centery - self.ball.ball.centery > 0:
+                self.ball.directionY = -1
+            else:
+                self.ball.directionY = 1
+    
+    # if ball hits left or right hits left or right border, increment scoring counter
     def scoring(self):
         if self.ball.ball.left <= 0:
             self.ball.reset()
             self.scorePlayer1 += 1
-            print(self.scorePlayer1, self.scorePlayer2)
 
         if self.ball.ball.right >= scaledWidth:
             self.ball.reset()
             self.scorePlayer2 += 1
-            print(self.scorePlayer1, self.scorePlayer2)
 
+    # draw Score on the canvas
     def displayScore(self):
         player1Score = basic_font.render(str(self.scorePlayer1), True, scoreColor)
         player2Score = basic_font.render(str(self.scorePlayer2), True, scoreColor)
@@ -126,16 +147,20 @@ players.append(player1)
 players.append(player2)
 
 # Ball
-ball = Ball(ballSpeedX, ballSpeedY)
+ball = Ball(ballSpeed)
 
 # Game
 game = Game(player1, player2, ball)
 
+# Gameloop
 while True:
+    # Controls
     for event in pygame.event.get():
+        # Quit game with red x
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 player1.movementy = -1
@@ -173,7 +198,8 @@ while True:
                 player2.movementx = 0
             if event.key == pygame.K_a:
                 player2.movementx = 0
-
+    
+    # draw Background
     screen.fill(backroundColor)
 
     for player in players:
