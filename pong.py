@@ -1,7 +1,5 @@
-from turtle import bgcolor, right
 import pygame, random, sys
 import math
-import sympy
 
 # To add sound use pygame mixer
 
