@@ -3,7 +3,7 @@ from _thread import *
 import pickle
 from playerPong import Player, Ball
 
-server = socket.gethostbyname(socket.gethostname()) # 192.168.56.1
+server = '192.168.178.77' #socket.gethostbyname(socket.gethostname()) # 192.168.56.1
 port = 5555
 screen_width = 1980
 screen_height = 1080

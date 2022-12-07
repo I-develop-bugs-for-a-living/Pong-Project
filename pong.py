@@ -19,6 +19,8 @@ pygame.display.set_caption('Fabis lustiges Pong')
 backroundColor = pygame.Color('#000000')
 # Ball and Paddel color
 ligth_grey = (250, 250, 250)
+# Item color
+red = (250, 0, 0)
 # ScoreboardColor
 scoreColor = (250, 250, 250)
 
@@ -32,6 +34,7 @@ class Player():
         self.paddel = pygame.Rect(width, scaledHeight/2 - 70, 10, 140)
         self.movementy = 0
         self.movementx = 0
+        self.width = width
 
     def collidesWithBorder(self):
         if self.paddel.top <= 0:
@@ -51,6 +54,10 @@ class Player():
         self.paddel.y += self.movementy * self.speed
         self.paddel.x += self.movementx * self.speed
         self.collidesWithBorder()
+
+    def reset(self):
+        self.paddel.x = self.width
+        self.paddel.y = scaledHeight/2 - 70
 
 class Ball():
     def __init__(self, speed):
@@ -80,11 +87,30 @@ class Ball():
     def draw(self):
         pygame.draw.rect(screen, ligth_grey, self.ball)
 
+class PowerUp():
+    def __init__(self):
+        self.box = pygame.Rect(200, 200, 50, 50)
+        self.colors = [red, ligth_grey, red, red]
+        self.tag = 0
+        self.types = ["Speed", "Size", "Teleport"]
+
+    def update(self):
+        self.draw()
+
+    def randomPosition(self):
+        self.box.x = 20
+        self.box.y = 20
+
+    def draw(self):
+        pygame.draw.rect(screen, self.color, self.box)
+    
+
 class Game():
-    def __init__(self, player1, player2, ball) -> None:
+    def __init__(self, player1, player2, ball, powerUp) -> None:
         self.player1 = player1
         self.player2 = player2
         self.ball = ball
+        self.powerUp = powerUp
         self.scorePlayer1 = 0
         self.scorePlayer2 = 0
     
@@ -95,6 +121,7 @@ class Game():
 
     # if player and ball collide, reverse xdirection
     def collision(self):
+        self.ballPowerUpCollision()
         if self.player1.paddel.colliderect(self.ball.ball):
             self.ball.directionX = 1
             theta = abs(self.player1.paddel.centery - self.ball.ball.centery) / 70 * 2
@@ -116,14 +143,26 @@ class Game():
             else:
                 self.ball.directionY = 1
     
+    def ballPowerUpCollision(self):
+        if self.powerUp.box.colliderect(self.ball.ball):
+            self.powerUp.randomPosition()
+            if self.ball.directionX == -1:
+                self.player2.speed *= 2
+            if self.ball.directionX == 1:
+                self.player1.speed *= 2
+    
     # if ball hits left or right hits left or right border, increment scoring counter
     def scoring(self):
         if self.ball.ball.left <= 0:
             self.ball.reset()
+            self.player1.reset()
+            self.player2.reset()
             self.scorePlayer1 += 1
 
         if self.ball.ball.right >= scaledWidth:
             self.ball.reset()
+            self.player1.reset()
+            self.player2.reset()
             self.scorePlayer2 += 1
 
     # draw Score on the canvas
@@ -147,8 +186,11 @@ players.append(player2)
 # Ball
 ball = Ball(ballSpeed)
 
+# PowerUp
+powerup = PowerUp()
+
 # Game
-game = Game(player1, player2, ball)
+game = Game(player1, player2, ball, powerup)
 
 # Gameloop
 while True:
@@ -205,6 +247,8 @@ while True:
 
     ball.update()
 
+    powerup.update()
+    
     game.check()
 
     pygame.display.flip()
